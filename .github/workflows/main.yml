@@ -11,7 +11,10 @@ defaults:
 
 jobs:
   buildtest:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [KSU, Non-KSU] # Menjalankan 2 build sekaligus secara paralel
 
     steps:
       - name: Checkout
@@ -31,7 +34,7 @@ jobs:
             openssl unzip cpio build-essential ccache liblz4-tool libsdl1.2-dev libstdc++6 \
             libxml2 libxml2-utils lzop pngcrush schedtool squashfs-tools xsltproc zlib1g-dev \
             libncurses5-dev bzip2 gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf \
-            gcc-arm-linux-gnueabi dos2unix kmod binutils-gold
+            gcc-arm-linux-gnueabi dos2unix kmod
 
       - name: Setup ZYC Clang
         run: |
@@ -40,54 +43,47 @@ jobs:
             wget -q $(curl -k https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-12-link.txt) -O zyc-clang.tar.gz
             tar -xf zyc-clang.tar.gz
             rm -f zyc-clang.tar.gz
-    
+  
       - name: Setup KernelSU (Legacy)
         run: |
           curl -LSs "https://raw.githubusercontent.com/rahmatsobrian/YoruNoKernelSU/dev/kernel/setup.sh" | bash -s legacy
-                              
-      - name: Notify Telegram - KernelSU Patch Applied
-        run: |
-          MSG="✅ *KernelSU SELinux Patch Applied Success*"
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TG_CHAT_ID }}" \
-            -d parse_mode="Markdown" \
-            -d text="$MSG"
-          
+
       - name: Start Build with log
         env:
-          KBUILD_BUILD_USER: "RahmatSobrian"
-          KBUILD_BUILD_HOST: "ReLIFE"
+          KBUILD_BUILD_USER: "Hoshino"
+          KBUILD_BUILD_HOST: "Yoru"
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           mkdir -p logs
-          bash buildclang.sh 2>&1 | tee logs/build.txt
+          # Mengirim nama varian (KSU/Non-KSU) ke dalam bash script
+          bash buildclang.sh ${{ matrix.variant }} 2>&1 | tee logs/build-${{ matrix.variant }}.txt
 
       - name: Upload Build Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: logs/build.txt
+          name: build-log-${{ matrix.variant }}
+          path: logs/build-${{ matrix.variant }}.txt
 
       - name: Upload AnyKernel Zip
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: anykernel-zip
+          name: anykernel-zip-${{ matrix.variant }}
           path: AnyKernel/*.zip
 
       - name: Upload Kernel Image
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: image-gz
+          name: image-gz-${{ matrix.variant }}
           path: out/arch/arm64/boot/Image.gz
 
       - name: Upload DTB
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: image-gz-dtb
+          name: image-gz-dtb-${{ matrix.variant }}
           path: out/arch/arm64/boot/Image.gz-dtb
           
