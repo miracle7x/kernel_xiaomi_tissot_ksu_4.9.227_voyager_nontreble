@@ -1,5 +1,9 @@
 CONFIG_LOCALVERSION="-Pearl"
 
+# KernelSU - SUSFS
+CONFIG_KSU=y
+CONFIG_KSU_TAMPER_SYSCALL_TABLE=y
+
 #
 # Automatically generated file; DO NOT EDIT.
 # Linux/arm64 4.9.227 Kernel Configuration
