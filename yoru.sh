@@ -9,7 +9,7 @@ white='\033[0m'
 # ================= VARIANT =================
 VARIANT=$1
 if [ -z "$VARIANT" ]; then
-    VARIANT="bakasu"
+    VARIANT="ksu"
 fi
 
 # ================= PATH =================
